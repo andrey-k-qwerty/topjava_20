@@ -4,36 +4,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-public class Meal {
-    private final LocalDateTime dateTime;
-
-    private final String description;
-
-    private final int calories;
+public class Meal extends AbstractMeal<Integer>{
 
     public Meal(LocalDateTime dateTime, String description, int calories) {
-        this.dateTime = dateTime;
-        this.description = description;
-        this.calories = calories;
+        super(dateTime, description, calories);
     }
 
-    public LocalDateTime getDateTime() {
-        return dateTime;
+    public Meal(Integer ID, LocalDateTime dateTime, String description, int calories) {
+        super(ID, dateTime, description, calories);
     }
 
-    public String getDescription() {
-        return description;
+    @Override
+    public boolean isNew() {
+        return   (ID == null || ID.intValue() == 0) ? true : false;
     }
 
-    public int getCalories() {
-        return calories;
-    }
 
-    public LocalDate getDate() {
-        return dateTime.toLocalDate();
-    }
-
-    public LocalTime getTime() {
-        return dateTime.toLocalTime();
-    }
 }
