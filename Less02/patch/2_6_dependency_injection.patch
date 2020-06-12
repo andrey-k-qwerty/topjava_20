@@ -1,0 +1,73 @@
+Index: src/main/java/ru/javawebinar/topjava/service/UserService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/service/UserService.java	(revision 0980438bf9b650c1b823b3fcdb75f0844bae4d1f)
++++ src/main/java/ru/javawebinar/topjava/service/UserService.java	(date 1591819518317)
+@@ -2,6 +2,7 @@
+ 
+ import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.repository.UserRepository;
++import ru.javawebinar.topjava.repository.inmemory.InMemoryUserRepository;
+ 
+ import java.util.List;
+ 
+@@ -10,7 +11,11 @@
+ 
+ public class UserService {
+ 
+-    private UserRepository repository;
++    private final UserRepository repository;
++
++    public UserService(UserRepository repository) {
++        this.repository = repository;
++    }
+ 
+     public User create(User user) {
+         return repository.save(user);
+Index: src/main/java/ru/javawebinar/topjava/SpringMain.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/SpringMain.java	(revision 0980438bf9b650c1b823b3fcdb75f0844bae4d1f)
++++ src/main/java/ru/javawebinar/topjava/SpringMain.java	(date 1591817610425)
+@@ -2,7 +2,10 @@
+ 
+ import org.springframework.context.ConfigurableApplicationContext;
+ import org.springframework.context.support.ClassPathXmlApplicationContext;
++import ru.javawebinar.topjava.model.Role;
++import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.repository.UserRepository;
++import ru.javawebinar.topjava.service.UserService;
+ 
+ import java.util.Arrays;
+ 
+@@ -14,6 +17,10 @@
+ //        UserRepository userRepository = (UserRepository) appCtx.getBean("inmemoryUserRepository");
+         UserRepository userRepository = appCtx.getBean(UserRepository.class);
+         userRepository.getAll();
++
++        UserService userService = appCtx.getBean(UserService.class);
++        userService.create(new User(null, "userName", "email@mail.ru", "password", Role.ADMIN));
++
+         appCtx.close();
+     }
+ }
+Index: src/main/resources/spring/spring-app.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/spring/spring-app.xml	(revision 0980438bf9b650c1b823b3fcdb75f0844bae4d1f)
++++ src/main/resources/spring/spring-app.xml	(date 1591819518313)
+@@ -4,4 +4,7 @@
+ 
+     <bean class="ru.javawebinar.topjava.repository.inmemory.InMemoryUserRepository" id="inmemoryUserRepository"/>
+ 
++    <bean class="ru.javawebinar.topjava.service.UserService">
++        <constructor-arg name="repository" ref="inmemoryUserRepository"/>
++    </bean>
+ </beans>
+\ No newline at end of file
