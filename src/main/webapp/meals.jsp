@@ -23,6 +23,35 @@
     <h2>Meals</h2>
     <a href="meals?action=create">Add Meal</a>
     <br><br>
+    <form method="get" action="meals">
+        <input type="hidden" name="action" value="filter">
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+
+            <tr>
+                <th>От даты (включая)</th>
+                <th>До даты (включая)</th>
+                <th>От времени (включая)</th>
+                <th>До времени (исключая)</th>
+             </tr>
+            </thead>
+            <tr>
+                <td> <input type="date" , name="dateFrom" > </td>
+                <td> <input type="date" , name="dateTo" > </td>
+                <td> <input type="time" , name="timeFrom" > </td>
+                <td> <input type="time" , name="timeTo" > </td>
+            </tr>
+        </table>
+<%--        <dl>--%>
+<%--            <dt>От даты (включая)</dt>--%>
+<%--            <dd></dd>--%>
+
+<%--            <dt>До даты (включая)</dt>--%>
+<%--            <dd></dd>--%>
+<%--        </dl>--%>
+        <button type="submit">Фильтровать</button>
+        <button onclick="window.location.reload()" type="button">Отменить</button>
+    </form>
     <table border="1" cellpadding="8" cellspacing="0">
         <thead>
         <tr>
@@ -34,7 +63,7 @@
         </tr>
         </thead>
         <c:forEach items="${meals}" var="meal">
-            <jsp:useBean id="meal" type="ru.javawebinar.topjava.model.MealTo"/>
+            <jsp:useBean id="meal" type="ru.javawebinar.topjava.to.MealTo"/>
             <tr class="${meal.excess ? 'excess' : 'normal'}">
                 <td>
                         <%--${meal.dateTime.toLocalDate()} ${meal.dateTime.toLocalTime()}--%>
