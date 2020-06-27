@@ -1,4 +1,5 @@
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/a708ea85663947aa91adc2b6e63d6748)](https://www.codacy.com/manual/andrey-k-qwerty/topjava_20?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=andrey-k-qwerty/topjava_20&amp;utm_campaign=Badge_Grade)
+[[![Codacy Badge](https://app.codacy.com/project/badge/Grade/3ccbe2cee6584a4a82070c54c7b91b58)](https://www.codacy.com/manual/andrey-k-qwerty/topjava_20?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=andrey-k-qwerty/topjava_20&amp;utm_campaign=Badge_Grade)
+[![Build Status](https://travis-ci.org/andrey-k-qwerty/topjava_20.svg?branch=master)](https://travis-ci.org/andrey-k-qwerty/topjava_20)
 Java Enterprise Online Project 
 ===============================
 Разработка полнофункционального Spring/JPA Enterprise приложения c авторизацией и правами доступа на основе ролей с использованием наиболее популярных инструментов и технологий Java: Maven, Spring MVC, Security, JPA(Hibernate), REST(Jackson), Bootstrap (css,js), datatables, jQuery + plugins, Java 8 Stream and Time API и хранением в базах данных Postgresql и HSQLDB.
