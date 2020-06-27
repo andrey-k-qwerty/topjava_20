@@ -1,4 +1,4 @@
-[[![Codacy Badge](https://app.codacy.com/project/badge/Grade/3ccbe2cee6584a4a82070c54c7b91b58)](https://www.codacy.com/manual/andrey-k-qwerty/topjava_20?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=andrey-k-qwerty/topjava_20&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/3ccbe2cee6584a4a82070c54c7b91b58)](https://www.codacy.com/manual/andrey-k-qwerty/topjava_20?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=andrey-k-qwerty/topjava_20&amp;utm_campaign=Badge_Grade)
 [![Build Status](https://travis-ci.org/andrey-k-qwerty/topjava_20.svg?branch=master)](https://travis-ci.org/andrey-k-qwerty/topjava_20)
 Java Enterprise Online Project 
 ===============================
