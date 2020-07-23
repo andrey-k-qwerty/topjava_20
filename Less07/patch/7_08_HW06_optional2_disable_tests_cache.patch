@@ -1,0 +1,183 @@
+Index: src/main/java/ru/javawebinar/topjava/repository/JpaUtil.java
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/repository/JpaUtil.java	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
++++ src/main/java/ru/javawebinar/topjava/repository/JpaUtil.java	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
+@@ -1,22 +0,0 @@
+-package ru.javawebinar.topjava.repository;
+-
+-import org.hibernate.Session;
+-import org.hibernate.SessionFactory;
+-
+-import javax.persistence.EntityManager;
+-import javax.persistence.PersistenceContext;
+-
+-public class JpaUtil {
+-
+-    @PersistenceContext
+-    private EntityManager em;
+-
+-    public void clear2ndLevelHibernateCache() {
+-        Session s = (Session) em.getDelegate();
+-        SessionFactory sf = s.getSessionFactory();
+-//        sf.evict(User.class);
+-//        sf.getCache().evictEntity(User.class, BaseEntity.START_SEQ);
+-//        sf.getCache().evictEntityRegion(User.class);
+-        sf.getCache().evictAllRegions();
+-    }
+-}
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- pom.xml	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
++++ pom.xml	(date 1595460715661)
+@@ -172,7 +172,7 @@
+         <dependency>
+             <groupId>org.ehcache</groupId>
+             <artifactId>ehcache</artifactId>
+-<!--            <scope>runtime</scope>-->
++            <scope>runtime</scope>
+             <version>${ehcache.version}</version>
+         </dependency>
+ 
+Index: src/main/resources/spring/spring-db.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/spring/spring-db.xml	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
++++ src/main/resources/spring/spring-db.xml	(date 1595460709059)
+@@ -111,8 +111,6 @@
+         <!-- Transaction manager for a single JPA EntityManagerFactory (alternative to JTA) -->
+         <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager"
+               p:entityManagerFactory-ref="entityManagerFactory"/>
+-
+-        <bean class="ru.javawebinar.topjava.repository.JpaUtil"/>
+     </beans>
+ 
+     <beans profile="jpa">
+Index: src/test/resources/spring/spring-cache.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/resources/spring/spring-cache.xml	(date 1595460715655)
++++ src/test/resources/spring/spring-cache.xml	(date 1595460715655)
+@@ -0,0 +1,27 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<beans xmlns="http://www.springframework.org/schema/beans"
++       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++       xmlns:cache="http://www.springframework.org/schema/cache"
++       xmlns:context="http://www.springframework.org/schema/context"
++       xmlns:util="http://www.springframework.org/schema/util"
++       xsi:schemaLocation="http://www.springframework.org/schema/beans
++         http://www.springframework.org/schema/beans/spring-beans.xsd
++         http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd
++         http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
++         http://www.springframework.org/schema/util https://www.springframework.org/schema/util/spring-util.xsd">
++
++    <cache:annotation-driven cache-manager="noOpCacheManager"/>
++
++    <!-- Disabling spring cache -->
++    <bean id="noOpCacheManager" class="org.springframework.cache.support.NoOpCacheManager"/>
++
++    <!-- Disabling Hibernate 2-d level cache -->
++    <beans profile="jpa,datajpa">
++        <util:properties id="disableCache">
++            <prop key="entityManagerFactory.jpaPropertyMap['hibernate.cache.use_second_level_cache']">false</prop>
++        </util:properties>
++
++        <context:property-override properties-ref="disableCache"/>
++    </beans>
++
++</beans>
+\ No newline at end of file
+Index: src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
++++ src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(date 1595460765798)
+@@ -1,10 +1,7 @@
+ package ru.javawebinar.topjava.service;
+ 
+-import org.junit.Assume;
+-import org.junit.Before;
+ import org.junit.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.cache.CacheManager;
+ import org.springframework.dao.DataAccessException;
+ import ru.javawebinar.topjava.model.Role;
+ import ru.javawebinar.topjava.model.User;
+@@ -14,7 +11,6 @@
+ import java.util.Date;
+ import java.util.List;
+ import java.util.Set;
+-import ru.javawebinar.topjava.repository.JpaUtil;
+ 
+ import static org.junit.Assert.assertThrows;
+ import static ru.javawebinar.topjava.UserTestData.*;
+@@ -24,20 +20,6 @@
+     @Autowired
+     protected UserService service;
+ 
+-    @Autowired
+-    private CacheManager cacheManager;
+-
+-    @Autowired(required = false)
+-    protected JpaUtil jpaUtil;
+-
+-    @Before
+-    public void setUp() throws Exception {
+-        cacheManager.getCache("users").clear();
+-        if (isJpaBased()) {
+-            jpaUtil.clear2ndLevelHibernateCache();
+-        }
+-    }
+-
+     @Test
+     public void create() throws Exception {
+         User created = service.create(getNew());
+Index: src/test/java/ru/javawebinar/topjava/service/AbstractServiceTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/service/AbstractServiceTest.java	(revision 89b075addf5372922511a5e64c5dc3cb2e710479)
++++ src/test/java/ru/javawebinar/topjava/service/AbstractServiceTest.java	(date 1595460709064)
+@@ -5,15 +5,12 @@
+ import org.junit.rules.ExternalResource;
+ import org.junit.rules.Stopwatch;
+ import org.junit.runner.RunWith;
+-import org.springframework.beans.factory.annotation.Autowired;
+-import org.springframework.core.env.Environment;
+ import org.springframework.test.context.ActiveProfiles;
+ import org.springframework.test.context.ContextConfiguration;
+ import org.springframework.test.context.jdbc.Sql;
+ import org.springframework.test.context.jdbc.SqlConfig;
+ import org.springframework.test.context.junit4.SpringRunner;
+ import ru.javawebinar.topjava.ActiveDbProfileResolver;
+-import ru.javawebinar.topjava.Profiles;
+ import ru.javawebinar.topjava.TimingRules;
+ 
+ import static org.junit.Assert.assertThrows;
+@@ -31,17 +28,9 @@
+     @ClassRule
+     public static ExternalResource summary = TimingRules.SUMMARY;
+ 
+-    @Autowired
+-    public Environment env;
+-
+     @Rule
+     public Stopwatch stopwatch = TimingRules.STOPWATCH;
+ 
+-    public boolean isJpaBased() {
+-//        return Arrays.stream(env.getActiveProfiles()).noneMatch(Profiles.JDBC::equals);
+-        return env.acceptsProfiles(org.springframework.core.env.Profiles.of(Profiles.JPA, Profiles.DATAJPA));
+-    }
+-
+     //  Check root cause in JUnit: https://github.com/junit-team/junit4/pull/778
+     public <T extends Throwable> void validateRootCause(Runnable runnable, Class<T> rootExceptionClass) {
+         assertThrows(rootExceptionClass, () -> {
