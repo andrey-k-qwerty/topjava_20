@@ -1,0 +1,168 @@
+Index: src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(revision 4e17f4a1d6465ac095d5e866df2a0069e02148ff)
++++ src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(date 1596031167823)
+@@ -5,7 +5,6 @@
+ import org.springframework.http.MediaType;
+ import org.springframework.test.web.servlet.ResultActions;
+ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+-import ru.javawebinar.topjava.UserTestData;
+ import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.service.UserService;
+ import ru.javawebinar.topjava.util.exception.NotFoundException;
+@@ -54,7 +53,7 @@
+ 
+     @Test
+     void update() throws Exception {
+-        User updated = UserTestData.getUpdated();
++        User updated = getUpdated();
+         perform(MockMvcRequestBuilders.put(REST_URL + USER_ID)
+                 .contentType(MediaType.APPLICATION_JSON)
+                 .content(JsonUtil.writeValue(updated)))
+@@ -65,7 +64,7 @@
+ 
+     @Test
+     void createWithLocation() throws Exception {
+-        User newUser = UserTestData.getNew();
++        User newUser = getNew();
+         ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
+                 .contentType(MediaType.APPLICATION_JSON)
+                 .content(JsonUtil.writeValue(newUser)))
+Index: src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(revision 4e17f4a1d6465ac095d5e866df2a0069e02148ff)
++++ src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(date 1596031167818)
+@@ -1,12 +1,10 @@
+ package ru.javawebinar.topjava.service;
+ 
+-import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.dao.DataAccessException;
+ import ru.javawebinar.topjava.model.Role;
+ import ru.javawebinar.topjava.model.User;
+-import ru.javawebinar.topjava.repository.UserRepository;
+ import ru.javawebinar.topjava.util.exception.NotFoundException;
+ 
+ import javax.validation.ConstraintViolationException;
+Index: src/test/java/ru/javawebinar/topjava/web/user/ProfileRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/ProfileRestControllerTest.java	(revision 4e17f4a1d6465ac095d5e866df2a0069e02148ff)
++++ src/test/java/ru/javawebinar/topjava/web/user/ProfileRestControllerTest.java	(date 1596031167836)
+@@ -4,7 +4,6 @@
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.http.MediaType;
+ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+-import ru.javawebinar.topjava.UserTestData;
+ import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.service.UserService;
+ import ru.javawebinar.topjava.web.AbstractControllerTest;
+@@ -38,7 +37,7 @@
+ 
+     @Test
+     void update() throws Exception {
+-        User updated = UserTestData.getUpdated();
++        User updated = getUpdated();
+         perform(MockMvcRequestBuilders.put(REST_URL).contentType(MediaType.APPLICATION_JSON)
+                 .content(JsonUtil.writeValue(updated)))
+                 .andDo(print())
+Index: config/Topjava-soapui-project.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- config/Topjava-soapui-project.xml	(revision 4e17f4a1d6465ac095d5e866df2a0069e02148ff)
++++ config/Topjava-soapui-project.xml	(date 1596031167809)
+@@ -83,7 +83,7 @@
+                     <con:request>{"name": "New2",
+  "email": "new2@yandex.ru",
+  "password": "passwordNew",
+- "roles": ["ROLE_USER"]
++ "roles": ["USER"]
+ }
+                     </con:request>
+                     <con:originalUri>http://localhost/topjava/rest/admin/users</con:originalUri>
+@@ -184,7 +184,7 @@
+                     <con:request>{"name": "UserUpdated",
+  "email": "user@yandex.ru",
+  "password": "passwordNew",
+- "roles": ["ROLE_USER"]
++ "roles": ["USER"]
+ }
+                     </con:request>
+                     <con:originalUri>http://localhost/topjava/rest/admin/users/100000</con:originalUri>
+@@ -303,7 +303,7 @@
+                     <con:request>{"name": "New777",
+  "email": "new777@yandex.ru",
+  "password": "passwordNew",
+- "roles": ["ROLE_USER"]
++ "roles": ["USER"]
+ }
+                     </con:request>
+                     <con:originalUri>http://localhost/topjava/rest/profile</con:originalUri>
+Index: src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java	(revision 4e17f4a1d6465ac095d5e866df2a0069e02148ff)
++++ src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java	(date 1596031167814)
+@@ -8,9 +8,26 @@
+ import java.util.Set;
+ 
+ public class ValidationUtil {
++    private static final Validator validator;
++
++    static {
++        //  From Javadoc: implementations are thread-safe and instances are typically cached and reused.
++        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
++        //  From Javadoc: implementations of this interface must be thread-safe
++        validator = factory.getValidator();
++    }
++
+     private ValidationUtil() {
+     }
+ 
++    public static <T> void validate(T bean) {
++        // https://alexkosarev.name/2018/07/30/bean-validation-api/
++        Set<ConstraintViolation<T>> violations = validator.validate(bean);
++        if (!violations.isEmpty()) {
++            throw new ConstraintViolationException(violations);
++        }
++    }
++
+     public static <T> T checkNotFoundWithId(T object, int id) {
+         checkNotFoundWithId(object != null, id);
+         return object;
+@@ -56,21 +73,4 @@
+         }
+         return result;
+     }
+-
+-    private static final Validator validator;
+-
+-    static {
+-        //  From Javadoc: implementations are thread-safe and instances are typically cached and reused.
+-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+-        //  From Javadoc: implementations of this interface must be thread-safe
+-        validator = factory.getValidator();
+-    }
+-
+-    public static <T> void validate(T bean) {
+-        // https://alexkosarev.name/2018/07/30/bean-validation-api/
+-        Set<ConstraintViolation<T>> violations = validator.validate(bean);
+-        if (!violations.isEmpty()) {
+-            throw new ConstraintViolationException(violations);
+-        }
+-    }
+ }
+\ No newline at end of file

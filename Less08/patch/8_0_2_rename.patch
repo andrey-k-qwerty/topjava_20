@@ -1,0 +1,80 @@
+Index: src/test/java/ru/javawebinar/topjava/MealTestData.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/MealTestData.java	(revision c7592814da19473b6d4d31f7ae79ee1a3a433eec)
++++ src/test/java/ru/javawebinar/topjava/MealTestData.java	(date 1596031948225)
+@@ -9,7 +9,7 @@
+ import static ru.javawebinar.topjava.model.AbstractBaseEntity.START_SEQ;
+ 
+ public class MealTestData {
+-    public static TestMatcher<Meal> MEAL_MATCHER = TestMatcher.usingFieldsComparator(Meal.class, "user");
++    public static TestMatcher<Meal> MEAL_MATCHER = TestMatcher.usingFieldsWithIgnoringComparator(Meal.class, "user");
+ 
+     public static final int NOT_FOUND = 10;
+     public static final int MEAL1_ID = START_SEQ + 2;
+Index: src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerSpringTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerSpringTest.java	(revision c7592814da19473b6d4d31f7ae79ee1a3a433eec)
++++ src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerSpringTest.java	(date 1596031942240)
+@@ -21,7 +21,7 @@
+     private InMemoryUserRepository repository;
+ 
+     @BeforeEach
+-    void setUp() throws Exception {
++    void setup() throws Exception {
+         repository.init();
+     }
+ 
+Index: src/test/java/ru/javawebinar/topjava/UserTestData.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/UserTestData.java	(revision c7592814da19473b6d4d31f7ae79ee1a3a433eec)
++++ src/test/java/ru/javawebinar/topjava/UserTestData.java	(date 1596031948235)
+@@ -9,7 +9,7 @@
+ import static ru.javawebinar.topjava.model.AbstractBaseEntity.START_SEQ;
+ 
+ public class UserTestData {
+-    public static TestMatcher<User> USER_MATCHER = TestMatcher.usingFieldsComparator(User.class, "registered","meals");
++    public static TestMatcher<User> USER_MATCHER = TestMatcher.usingFieldsWithIgnoringComparator(User.class, "registered","meals");
+ 
+     public static final int NOT_FOUND = 10;
+     public static final int USER_ID = START_SEQ;
+Index: src/test/java/ru/javawebinar/topjava/TestMatcher.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/TestMatcher.java	(revision c7592814da19473b6d4d31f7ae79ee1a3a433eec)
++++ src/test/java/ru/javawebinar/topjava/TestMatcher.java	(date 1596031948231)
+@@ -16,7 +16,7 @@
+         this.fieldsToIgnore = fieldsToIgnore;
+     }
+ 
+-    public static <T> TestMatcher<T> usingFieldsComparator(Class<T> clazz, String... fieldsToIgnore) {
++    public static <T> TestMatcher<T> usingFieldsWithIgnoringComparator(Class<T> clazz, String... fieldsToIgnore) {
+         return new TestMatcher<>(clazz, fieldsToIgnore);
+     }
+ 
+Index: src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerTest.java	(revision c7592814da19473b6d4d31f7ae79ee1a3a433eec)
++++ src/test/java/ru/javawebinar/topjava/web/user/InMemoryAdminRestControllerTest.java	(date 1596031942243)
+@@ -36,7 +36,7 @@
+     }
+ 
+     @BeforeEach
+-    void setUp() throws Exception {
++    void setup() throws Exception {
+         // re-initialize
+         repository.init();
+     }
