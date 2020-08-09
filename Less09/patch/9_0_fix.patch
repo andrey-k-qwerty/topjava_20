@@ -1,0 +1,152 @@
+Index: src/test/java/ru/javawebinar/topjava/TestMatcher.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/TestMatcher.java	(revision 6daf98fa529c47eaf67c71f50297d264bb37ad16)
++++ src/test/java/ru/javawebinar/topjava/TestMatcher.java	(date 1596629122602)
+@@ -3,54 +3,57 @@
+ import org.springframework.test.web.servlet.ResultMatcher;
+ 
+ import java.util.List;
++import java.util.function.BiConsumer;
+ 
+ import static org.assertj.core.api.Assertions.assertThat;
+ import static ru.javawebinar.topjava.TestUtil.readListFromJsonMvcResult;
+ 
+ public class TestMatcher<T> {
+     private final Class<T> clazz;
+-    private final String[] fieldsToIgnore;
+-    private final boolean usingEquals;
++    private final BiConsumer<T, T> assertion;
++    private final BiConsumer<Iterable<T>, Iterable<T>> iterableAssertion;
+ 
+-    private TestMatcher(Class<T> clazz, boolean usingEquals, String... fieldsToIgnore) {
++    private TestMatcher(Class<T> clazz, BiConsumer<T, T> assertion, BiConsumer<Iterable<T>, Iterable<T>> iterableAssertion) {
+         this.clazz = clazz;
+-        this.fieldsToIgnore = fieldsToIgnore;
+-        this.usingEquals = usingEquals;
++        this.assertion = assertion;
++        this.iterableAssertion = iterableAssertion;
++    }
++
++    public static <T> TestMatcher<T> usingAssertions(Class<T> clazz, BiConsumer<T, T> assertion, BiConsumer<Iterable<T>, Iterable<T>> iterableAssertion) {
++        return new TestMatcher<>(clazz, assertion, iterableAssertion);
+     }
+ 
+-    public static <T> TestMatcher<T> usingEqualsComparator(Class<T> clazz) {
+-        return new TestMatcher<>(clazz, true);
++    public static <T> TestMatcher<T> usingEqualsAssertions(Class<T> clazz) {
++        return usingAssertions(clazz,
++                (a, e) -> assertThat(a).isEqualTo(e),
++                (a, e) -> assertThat(a).isEqualTo(e));
+     }
+ 
+-    public static <T> TestMatcher<T> usingFieldsWithIgnoringComparator(Class<T> clazz, String... fieldsToIgnore) {
+-        return new TestMatcher<>(clazz, false, fieldsToIgnore);
++    public static <T> TestMatcher<T> usingFieldsWithIgnoringAssertions(Class<T> clazz, String... fieldsToIgnore) {
++        return usingAssertions(clazz,
++                (a, e) -> assertThat(a).isEqualToIgnoringGivenFields(e, fieldsToIgnore),
++                (a, e) -> assertThat(a).usingElementComparatorIgnoringFields(fieldsToIgnore).isEqualTo(e));
+     }
+ 
+     public void assertMatch(T actual, T expected) {
+-        if (usingEquals) {
+-            assertThat(actual).isEqualTo(expected);
+-        } else {
+-            assertThat(actual).isEqualToIgnoringGivenFields(expected, fieldsToIgnore);
+-        }
++        assertion.accept(actual, expected);
+     }
+ 
+-    public void assertMatch(Iterable<T> actual, T... expected) {
++    @SafeVarargs
++    public final void assertMatch(Iterable<T> actual, T... expected) {
+         assertMatch(actual, List.of(expected));
+     }
+ 
+     public void assertMatch(Iterable<T> actual, Iterable<T> expected) {
+-        if (usingEquals) {
+-            assertThat(actual).isEqualTo(expected);
+-        } else {
+-            assertThat(actual).usingElementComparatorIgnoringFields(fieldsToIgnore).isEqualTo(expected);
+-        }
++        iterableAssertion.accept(actual, expected);
+     }
+ 
+     public ResultMatcher contentJson(T expected) {
+         return result -> assertMatch(TestUtil.readFromJsonMvcResult(result, clazz), expected);
+     }
+ 
+-    public ResultMatcher contentJson(T... expected) {
++    @SafeVarargs
++    public final ResultMatcher contentJson(T... expected) {
+         return contentJson(List.of(expected));
+     }
+ 
+Index: src/main/webapp/resources/js/topjava.common.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.common.js	(revision 6daf98fa529c47eaf67c71f50297d264bb37ad16)
++++ src/main/webapp/resources/js/topjava.common.js	(date 1596635843490)
+@@ -50,7 +50,7 @@
+     });
+ }
+ 
+-let failedNote;
++var failedNote;
+ 
+ function closeNoty() {
+     if (failedNote) {
+Index: src/test/java/ru/javawebinar/topjava/UserTestData.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/UserTestData.java	(revision 6daf98fa529c47eaf67c71f50297d264bb37ad16)
++++ src/test/java/ru/javawebinar/topjava/UserTestData.java	(date 1596631925589)
+@@ -9,7 +9,7 @@
+ import static ru.javawebinar.topjava.model.AbstractBaseEntity.START_SEQ;
+ 
+ public class UserTestData {
+-    public static TestMatcher<User> USER_MATCHER = TestMatcher.usingFieldsWithIgnoringComparator(User.class, "registered","meals");
++    public static TestMatcher<User> USER_MATCHER = TestMatcher.usingFieldsWithIgnoringAssertions(User.class, "registered","meals");
+ 
+     public static final int NOT_FOUND = 10;
+     public static final int USER_ID = START_SEQ;
+Index: src/test/java/ru/javawebinar/topjava/MealTestData.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/MealTestData.java	(revision 6daf98fa529c47eaf67c71f50297d264bb37ad16)
++++ src/test/java/ru/javawebinar/topjava/MealTestData.java	(date 1596629004306)
+@@ -10,8 +10,8 @@
+ import static ru.javawebinar.topjava.model.AbstractBaseEntity.START_SEQ;
+ 
+ public class MealTestData {
+-    public static TestMatcher<Meal> MEAL_MATCHER = TestMatcher.usingFieldsWithIgnoringComparator(Meal.class, "user");
+-    public static TestMatcher<MealTo> MEAL_TO_MATCHER = TestMatcher.usingEqualsComparator(MealTo.class);
++    public static TestMatcher<Meal> MEAL_MATCHER = TestMatcher.usingFieldsWithIgnoringAssertions(Meal.class, "user");
++    public static TestMatcher<MealTo> MEAL_TO_MATCHER = TestMatcher.usingEqualsAssertions(MealTo.class);
+ 
+     public static final int NOT_FOUND = 10;
+     public static final int MEAL1_ID = START_SEQ + 2;
+Index: src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java	(revision 6daf98fa529c47eaf67c71f50297d264bb37ad16)
++++ src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java	(date 1596628998939)
+@@ -54,7 +54,7 @@
+                 .content(JsonUtil.writeValue(updated)))
+                 .andExpect(status().isNoContent());
+ 
+-        MEAL_MATCHER.assertMatch(mealService.get(MEAL1_ID, START_SEQ), updated);
++        MEAL_MATCHER.assertMatch(mealService.get(MEAL1_ID, USER_ID), updated);
+     }
+ 
+     @Test

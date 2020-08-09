@@ -1,0 +1,37 @@
+Index: src/main/webapp/WEB-INF/jsp/meals.jsp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/WEB-INF/jsp/meals.jsp	(revision d256d1a37f3e5b52a1038c81cef3106ab26b2073)
++++ src/main/webapp/WEB-INF/jsp/meals.jsp	(date 1596386091220)
+@@ -37,6 +37,10 @@
+                 </form>
+             </div>
+             <div class="card-footer text-right">
++                <button class="btn btn-danger" onclick="clearFilter()">
++                    <span class="fa fa-remove"></span>
++                    <spring:message code="common.cancel"/>
++                </button>
+                 <button class="btn btn-primary" onclick="updateFilteredTable()">
+                     <span class="fa fa-filter"></span>
+                     <spring:message code="meal.filter"/>
+Index: src/main/webapp/resources/js/topjava.meals.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.meals.js	(revision d256d1a37f3e5b52a1038c81cef3106ab26b2073)
++++ src/main/webapp/resources/js/topjava.meals.js	(date 1596386466607)
+@@ -6,6 +6,11 @@
+     }).done(updateTableByData);
+ }
+ 
++function clearFilter() {
++    $("#filter")[0].reset();
++    $.get("profile/meals/", updateTableByData);
++}
++
+ $(function () {
+     makeEditable({
+         ajaxUrl: "profile/meals/",

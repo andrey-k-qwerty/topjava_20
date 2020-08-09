@@ -1,0 +1,99 @@
+Index: src/main/java/ru/javawebinar/topjava/model/Meal.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/model/Meal.java	(revision e83d802657a8922bdcc6e1878fde0553391fcb3b)
++++ src/main/java/ru/javawebinar/topjava/model/Meal.java	(date 1596459251339)
+@@ -1,5 +1,6 @@
+ package ru.javawebinar.topjava.model;
+ 
++import com.fasterxml.jackson.annotation.JsonBackReference;
+ import org.hibernate.annotations.OnDelete;
+ import org.hibernate.annotations.OnDeleteAction;
+ import org.hibernate.validator.constraints.Range;
+@@ -43,6 +44,7 @@
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "user_id", nullable = false)
+     @OnDelete(action = OnDeleteAction.CASCADE)
++    @JsonBackReference
+ //    @NotNull
+     private User user;
+ 
+Index: src/main/java/ru/javawebinar/topjava/web/user/ProfileRestController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/ProfileRestController.java	(revision e83d802657a8922bdcc6e1878fde0553391fcb3b)
++++ src/main/java/ru/javawebinar/topjava/web/user/ProfileRestController.java	(date 1596459251356)
+@@ -33,4 +33,9 @@
+     public String testUTF() {
+         return "Русский текст";
+     }
++
++    @GetMapping("/with-meals")
++    public User getWithMeals() {
++        return super.getWithMeals(authUserId());
++    }
+ }
+\ No newline at end of file
+Index: src/main/java/ru/javawebinar/topjava/model/User.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/model/User.java	(revision e83d802657a8922bdcc6e1878fde0553391fcb3b)
++++ src/main/java/ru/javawebinar/topjava/model/User.java	(date 1596459276207)
+@@ -1,5 +1,6 @@
+ package ru.javawebinar.topjava.model;
+ 
++import com.fasterxml.jackson.annotation.JsonManagedReference;
+ import org.hibernate.annotations.BatchSize;
+ import org.hibernate.annotations.Cache;
+ import org.hibernate.annotations.CacheConcurrencyStrategy;
+@@ -63,7 +64,7 @@
+ 
+     @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")//, cascade = CascadeType.REMOVE, orphanRemoval = true)
+     @OrderBy("dateTime DESC")
+-//    @JsonIgnore
++    @JsonManagedReference
+     private List<Meal> meals;
+ 
+     public User() {
+Index: src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java	(revision e83d802657a8922bdcc6e1878fde0553391fcb3b)
++++ src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java	(date 1596459251351)
+@@ -61,4 +61,9 @@
+     public void enable(@PathVariable int id, @RequestParam boolean enabled) {
+         super.enable(id, enabled);
+     }
++
++    @GetMapping("/{id}/with-meals")
++    public User getWithMeals(@PathVariable int id) {
++        return super.getWithMeals(id);
++    }
+ }
+\ No newline at end of file
+Index: src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java	(revision e83d802657a8922bdcc6e1878fde0553391fcb3b)
++++ src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java	(date 1596459251347)
+@@ -53,4 +53,9 @@
+         log.info(enabled ? "enable {}" : "disable {}", id);
+         service.enable(id, enabled);
+     }
++
++    public User getWithMeals(int id) {
++        log.info("getWithMeals {}", id);
++        return service.getWithMeals(id);
++    }
+ }
+\ No newline at end of file

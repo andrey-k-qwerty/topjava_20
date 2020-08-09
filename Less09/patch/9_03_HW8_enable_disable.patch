@@ -1,0 +1,230 @@
+Index: src/main/webapp/resources/css/style.css
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/css/style.css	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/webapp/resources/css/style.css	(date 1596386569723)
+@@ -10,6 +10,10 @@
+     cursor: pointer;
+ }
+ 
++tr[data-userEnabled="false"] {
++    opacity: 0.3;
++}
++
+ /*https://getbootstrap.com/docs/4.0/examples/sticky-footer/sticky-footer.css*/
+ html {
+     position: relative;
+Index: src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/test/java/ru/javawebinar/topjava/service/AbstractUserServiceTest.java	(date 1596386656705)
+@@ -12,7 +12,7 @@
+ import java.util.List;
+ import java.util.Set;
+ 
+-import static org.junit.jupiter.api.Assertions.assertThrows;
++import static org.junit.jupiter.api.Assertions.*;
+ import static ru.javawebinar.topjava.UserTestData.*;
+ 
+ public abstract class AbstractUserServiceTest extends AbstractServiceTest {
+@@ -85,4 +85,12 @@
+         validateRootCause(() -> service.create(new User(null, "User", "mail@yandex.ru", "password", 9, true, new Date(), Set.of())), ConstraintViolationException.class);
+         validateRootCause(() -> service.create(new User(null, "User", "mail@yandex.ru", "password", 10001, true, new Date(), Set.of())), ConstraintViolationException.class);
+     }
++
++    @Test
++    void enable() {
++        service.enable(USER_ID, false);
++        assertFalse(service.get(USER_ID).isEnabled());
++        service.enable(USER_ID, true);
++        assertTrue(service.get(USER_ID).isEnabled());
++    }
+ }
+\ No newline at end of file
+Index: src/main/webapp/WEB-INF/jsp/users.jsp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/WEB-INF/jsp/users.jsp	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/webapp/WEB-INF/jsp/users.jsp	(date 1596386971113)
+@@ -31,11 +31,11 @@
+             </thead>
+             <c:forEach items="${users}" var="user">
+                 <jsp:useBean id="user" type="ru.javawebinar.topjava.model.User"/>
+-                <tr>
++                <tr data-userEnabled="${user.enabled}">
+                     <td><c:out value="${user.name}"/></td>
+                     <td><a href="mailto:${user.email}">${user.email}</a></td>
+                     <td>${user.roles}</td>
+-                    <td><input type="checkbox" <c:if test="${user.enabled}">checked</c:if> id="${user.id}"/></td>
++                    <td><input type="checkbox" <c:if test="${user.enabled}">checked</c:if> onclick="enable($(this), ${user.id})"/></td>
+                     <td><fmt:formatDate value="${user.registered}" pattern="dd-MMMM-yyyy"/></td>
+                     <td><a><span class="fa fa-pencil"></span></a></td>
+                     <td><a onclick="deleteRow(${user.id})"><span class="fa fa-remove"></span></a></td>
+Index: src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java	(date 1596386569719)
+@@ -37,4 +37,11 @@
+             super.create(user);
+         }
+     }
++
++    @Override
++    @PostMapping("/{id}")
++    @ResponseStatus(value = HttpStatus.NO_CONTENT)
++    public void enable(@PathVariable int id, @RequestParam boolean enabled) {
++        super.enable(id, enabled);
++    }
+ }
+Index: src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(date 1596386656716)
+@@ -11,6 +11,7 @@
+ import ru.javawebinar.topjava.web.AbstractControllerTest;
+ import ru.javawebinar.topjava.web.json.JsonUtil;
+ 
++import static org.junit.jupiter.api.Assertions.assertFalse;
+ import static org.junit.jupiter.api.Assertions.assertThrows;
+ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+@@ -84,4 +85,15 @@
+                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                 .andExpect(USER_MATCHER.contentJson(ADMIN, USER));
+     }
++
++    @Test
++    void enable() throws Exception {
++        perform(MockMvcRequestBuilders.patch(REST_URL + USER_ID)
++                .param("enabled", "false")
++                .contentType(MediaType.APPLICATION_JSON))
++                .andDo(print())
++                .andExpect(status().isNoContent());
++
++        assertFalse(userService.get(USER_ID).isEnabled());
++    }
+ }
+\ No newline at end of file
+Index: src/main/java/ru/javawebinar/topjava/service/UserService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/service/UserService.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/java/ru/javawebinar/topjava/service/UserService.java	(date 1596386569705)
+@@ -3,6 +3,7 @@
+ import org.springframework.cache.annotation.CacheEvict;
+ import org.springframework.cache.annotation.Cacheable;
+ import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
+ import org.springframework.util.Assert;
+ import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.repository.UserRepository;
+@@ -52,6 +53,14 @@
+         checkNotFoundWithId(repository.save(user), user.id());
+     }
+ 
++    @CacheEvict(value = "users", allEntries = true)
++    @Transactional
++    public void enable(int id, boolean enabled) {
++        User user = get(id);
++        user.setEnabled(enabled);
++        repository.save(user);  // !! need only for JDBC implementation
++    }
++
+     public User getWithMeals(int id) {
+         return checkNotFoundWithId(repository.getWithMeals(id), id);
+     }
+Index: src/main/webapp/resources/js/topjava.users.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.users.js	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/webapp/resources/js/topjava.users.js	(date 1596386874425)
+@@ -1,7 +1,24 @@
++var userAjaxUrl = "admin/users/";
++
++function enable(chkbox, id) {
++    var enabled = chkbox.is(":checked");
++//  https://stackoverflow.com/a/22213543/548473
++    $.ajax({
++        url: userAjaxUrl + id,
++        type: "POST",
++        data: "enabled=" + enabled
++    }).done(function () {
++        chkbox.closest("tr").attr("data-userEnabled", enabled);
++        successNoty(enabled ? "Enabled" : "Disabled");
++    }).fail(function () {
++        $(chkbox).prop("checked", !enabled);
++    });
++}
++
+ // $(document).ready(function () {
+ $(function () {
+     makeEditable({
+-            ajaxUrl: "admin/users/",
++            ajaxUrl: userAjaxUrl,
+             datatableApi: $("#datatable").DataTable({
+                 "paging": false,
+                 "info": true,
+@@ -38,7 +55,7 @@
+                 ]
+             }),
+             updateTable: function () {
+-                $.get("admin/users/", updateTableByData);
++                $.get(userAjaxUrl, updateTableByData);
+             }
+         }
+     );
+Index: src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/java/ru/javawebinar/topjava/web/user/AdminRestController.java	(date 1596386569715)
+@@ -54,4 +54,11 @@
+     public User getByMail(@RequestParam String email) {
+         return super.getByMail(email);
+     }
++
++    @Override
++    @PatchMapping("/{id}")
++    @ResponseStatus(value = HttpStatus.NO_CONTENT)
++    public void enable(@PathVariable int id, @RequestParam boolean enabled) {
++        super.enable(id, enabled);
++    }
+ }
+\ No newline at end of file
+Index: src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java	(revision 288573010a0a800387113c67c9354cdc9182a81f)
++++ src/main/java/ru/javawebinar/topjava/web/user/AbstractUserController.java	(date 1596386569709)
+@@ -48,4 +48,9 @@
+         log.info("getByEmail {}", email);
+         return service.getByEmail(email);
+     }
++
++    public void enable(int id, boolean enabled) {
++        log.info(enabled ? "enable {}" : "disable {}", id);
++        service.enable(id, enabled);
++    }
+ }
+\ No newline at end of file
