@@ -1,0 +1,92 @@
+Index: src/main/java/ru/javawebinar/topjava/util/exception/NotFoundException.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/util/exception/NotFoundException.java	(revision 76231740d66432a09681656b9d8193454607afa3)
++++ src/main/java/ru/javawebinar/topjava/util/exception/NotFoundException.java	(date 1596817519441)
+@@ -1,5 +1,10 @@
+ package ru.javawebinar.topjava.util.exception;
+ 
++import org.springframework.http.HttpStatus;
++import org.springframework.web.bind.annotation.ResponseStatus;
++
++//  http://stackoverflow.com/a/22358422/548473
++@ResponseStatus(value = HttpStatus.UNPROCESSABLE_ENTITY, reason = "No data found")  // 422
+ public class NotFoundException extends RuntimeException {
+     public NotFoundException(String message) {
+         super(message);
+Index: src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java	(revision 76231740d66432a09681656b9d8193454607afa3)
++++ src/test/java/ru/javawebinar/topjava/web/meal/MealRestControllerTest.java	(date 1596816814446)
+@@ -49,6 +49,14 @@
+                 .andExpect(status().isUnauthorized());
+     }
+ 
++    @Test
++    void getNotFound() throws Exception {
++        perform(MockMvcRequestBuilders.get(REST_URL + ADMIN_MEAL_ID)
++                .with(userHttpBasic(USER)))
++                .andDo(print())
++                .andExpect(status().isUnprocessableEntity());
++    }
++
+     @Test
+     void delete() throws Exception {
+         perform(MockMvcRequestBuilders.delete(REST_URL + MEAL1_ID)
+@@ -57,6 +65,13 @@
+         assertThrows(NotFoundException.class, () -> mealService.get(MEAL1_ID, USER_ID));
+     }
+ 
++    @Test
++    void deleteNotFound() throws Exception {
++        perform(MockMvcRequestBuilders.delete(REST_URL + ADMIN_MEAL_ID)
++                .with(userHttpBasic(USER)))
++                .andExpect(status().isUnprocessableEntity());
++    }
++
+     @Test
+     void update() throws Exception {
+         Meal updated = MealTestData.getUpdated();
+Index: src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(revision 76231740d66432a09681656b9d8193454607afa3)
++++ src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(date 1596816814461)
+@@ -38,6 +38,15 @@
+                 .andExpect(USER_MATCHER.contentJson(ADMIN));
+     }
+ 
++    @Test
++    void getNotFound() throws Exception {
++        perform(MockMvcRequestBuilders.get(REST_URL + 1)
++                .with(userHttpBasic(ADMIN)))
++                .andDo(print())
++                .andExpect(status().isUnprocessableEntity())
++                .andDo(print());
++    }
++
+     @Test
+     void getByEmail() throws Exception {
+         perform(MockMvcRequestBuilders.get(REST_URL + "by?email=" + ADMIN.getEmail())
+@@ -56,6 +65,14 @@
+         assertThrows(NotFoundException.class, () -> userService.get(USER_ID));
+     }
+ 
++    @Test
++    void deleteNotFound() throws Exception {
++        perform(MockMvcRequestBuilders.delete(REST_URL + 1)
++                .with(userHttpBasic(ADMIN)))
++                .andExpect(status().isUnprocessableEntity())
++                .andDo(print());
++    }
++
+     @Test
+     void getUnAuth() throws Exception {
+         perform(MockMvcRequestBuilders.get(REST_URL))

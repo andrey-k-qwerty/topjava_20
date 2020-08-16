@@ -1,0 +1,77 @@
+Index: src/main/webapp/resources/js/topjava.common.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.common.js	(revision f33c4b59dd20063b463bebd1b58bede2df14f2c2)
++++ src/main/webapp/resources/js/topjava.common.js	(date 1597268430610)
+@@ -34,18 +34,12 @@
+     $("#modalTitle").html(i18n["editTitle"]);
+     $.get(ajaxUrl + id, function (data) {
+         $.each(data, function (key, value) {
+-            form.find("input[name='" + key + "']").val(
+-                key === "dateTime" ? formatDate(value) : value
+-            );
++            form.find("input[name='" + key + "']").val(value);
+         });
+         $('#editRow').modal();
+     });
+ }
+ 
+-function formatDate(date) {
+-    return date.replace('T', ' ').substr(0, 16);
+-}
+-
+ function deleteRow(id) {
+     if (confirm(i18n['common.confirm'])) {
+         $.ajax({
+@@ -95,8 +89,9 @@
+ 
+ function failNoty(jqXHR) {
+     closeNoty();
++    var responseJSON = JSON.parse(jqXHR.responseText);
+     failedNote = new Noty({
+-        text: "<span class='fa fa-lg fa-exclamation-circle'></span> &nbsp;" + i18n["common.errorStatus"] + ": " + jqXHR.status + (jqXHR.responseJSON ? "<br>" + jqXHR.responseJSON : ""),
++        text: "<span class='fa fa-lg fa-exclamation-circle'></span> &nbsp;" + i18n["common.errorStatus"] + ": " + jqXHR.status + (responseJSON ? "<br>" + responseJSON : ""),
+         type: "error",
+         layout: "bottomRight"
+     }).show();
+Index: src/main/webapp/resources/js/topjava.meals.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.meals.js	(revision f33c4b59dd20063b463bebd1b58bede2df14f2c2)
++++ src/main/webapp/resources/js/topjava.meals.js	(date 1597268615018)
+@@ -13,17 +13,24 @@
+     $.get(mealAjaxUrl, updateTableByData);
+ }
+ 
++// http://api.jquery.com/jQuery.ajax/#using-converters
++$.ajaxSetup({
++    converters: {
++        "text json": function (stringData) {
++            var json = JSON.parse(stringData);
++            $(json).each(function () {
++                this.dateTime = this.dateTime.replace('T', ' ').substr(0, 16);
++            });
++            return json;
++        }
++    }
++});
++
+ $(function () {
+     makeEditable(mealAjaxUrl, {
+         "columns": [
+             {
+-                "data": "dateTime",
+-                "render": function (date, type, row) {
+-                    if (type === 'display') {
+-                        return formatDate(date);
+-                    }
+-                    return date;
+-                }
++                "data": "dateTime"
+             },
+             {
+                 "data": "description"

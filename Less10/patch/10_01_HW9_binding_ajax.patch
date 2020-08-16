@@ -1,0 +1,641 @@
+Index: src/main/java/ru/javawebinar/topjava/web/meal/MealUIController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/meal/MealUIController.java	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/java/ru/javawebinar/topjava/web/meal/MealUIController.java	(date 1597261814330)
+@@ -1,15 +1,17 @@
+ package ru.javawebinar.topjava.web.meal;
+ 
+-import org.springframework.format.annotation.DateTimeFormat;
+ import org.springframework.http.HttpStatus;
+ import org.springframework.http.MediaType;
++import org.springframework.http.ResponseEntity;
+ import org.springframework.lang.Nullable;
++import org.springframework.validation.BindingResult;
+ import org.springframework.web.bind.annotation.*;
+ import ru.javawebinar.topjava.model.Meal;
+ import ru.javawebinar.topjava.to.MealTo;
++import ru.javawebinar.topjava.util.ValidationUtil;
+ 
++import javax.validation.Valid;
+ import java.time.LocalDate;
+-import java.time.LocalDateTime;
+ import java.time.LocalTime;
+ import java.util.List;
+ 
+@@ -23,6 +25,12 @@
+         return super.getAll();
+     }
+ 
++    @Override
++    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
++    public Meal get(@PathVariable int id) {
++        return super.get(id);
++    }
++
+     @Override
+     @DeleteMapping(value = "/{id}")
+     @ResponseStatus(value = HttpStatus.NO_CONTENT)
+@@ -31,15 +39,16 @@
+     }
+ 
+     @PostMapping
+-    @ResponseStatus(value = HttpStatus.NO_CONTENT)
+-    public void createOrUpdate(@RequestParam Integer id,
+-                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime,
+-                               @RequestParam String description,
+-                               @RequestParam int calories) {
+-        Meal meal = new Meal(id, dateTime, description, calories);
++    public ResponseEntity<String> createOrUpdate(@Valid Meal meal, BindingResult result) {
++        if (result.hasErrors()) {
++            return ValidationUtil.getErrorResponse(result);
++        }
+         if (meal.isNew()) {
+             super.create(meal);
++        } else {
++            super.update(meal, meal.getId());
+         }
++        return ResponseEntity.ok().build();
+     }
+ 
+     @Override
+Index: src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/java/ru/javawebinar/topjava/util/ValidationUtil.java	(date 1597261801471)
+@@ -1,11 +1,13 @@
+ package ru.javawebinar.topjava.util;
+ 
+-
++import org.springframework.http.ResponseEntity;
++import org.springframework.validation.BindingResult;
+ import ru.javawebinar.topjava.HasId;
+ import ru.javawebinar.topjava.util.exception.NotFoundException;
+ 
+ import javax.validation.*;
+ import java.util.Set;
++import java.util.stream.Collectors;
+ 
+ public class ValidationUtil {
+     private static final Validator validator;
+@@ -73,4 +75,12 @@
+         }
+         return result;
+     }
++
++    public static ResponseEntity<String> getErrorResponse(BindingResult result) {
++        return ResponseEntity.unprocessableEntity().body(
++                result.getFieldErrors().stream()
++                        .map(fe -> String.format("[%s] %s", fe.getField(), fe.getDefaultMessage()))
++                        .collect(Collectors.joining("<br>"))
++        );
++    }
+ }
+\ No newline at end of file
+Index: src/main/webapp/WEB-INF/jsp/users.jsp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/WEB-INF/jsp/users.jsp	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/webapp/WEB-INF/jsp/users.jsp	(date 1597261801721)
+@@ -78,13 +78,7 @@
+ </div>
+ <jsp:include page="fragments/footer.jsp"/>
+ </body>
+-<script type="text/javascript">
+-    const i18n = [];
+-    i18n["addTitle"] = '<spring:message code="user.add"/>';
+-    i18n["editTitle"] = '<spring:message code="user.edit"/>';
+-
+-    <c:forEach var="key" items='<%=new String[]{"common.deleted","common.saved","common.enabled","common.disabled","common.errorStatus","common.confirm"}%>'>
+-    i18n["${key}"] = "<spring:message code="${key}"/>";
+-    </c:forEach>
+-</script>
++<jsp:include page="fragments/i18n.jsp">
++    <jsp:param name="page" value="user"/>
++</jsp:include>
+ </html>
+\ No newline at end of file
+Index: src/main/resources/logback.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/logback.xml	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/resources/logback.xml	(date 1597261801559)
+@@ -23,7 +23,7 @@
+     <logger name="ru.javawebinar.topjava" level="debug"/>
+     <!--<logger name="org.springframework.web.servlet" level="debug"/>-->
+     <logger name="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver" level="debug"/>
+-    <logger name="org.springframework.security" level="debug"/>
++<!--    <logger name="org.springframework.security" level="debug"/>-->
+ 
+     <root level="info">
+         <appender-ref ref="file"/>
+Index: src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/java/ru/javawebinar/topjava/web/user/AdminUIController.java	(date 1597261801515)
+@@ -7,6 +7,7 @@
+ import org.springframework.web.bind.annotation.*;
+ import ru.javawebinar.topjava.model.User;
+ import ru.javawebinar.topjava.to.UserTo;
++import ru.javawebinar.topjava.util.ValidationUtil;
+ 
+ import javax.validation.Valid;
+ import java.util.List;
+@@ -38,10 +39,7 @@
+     @PostMapping
+     public ResponseEntity<String> createOrUpdate(@Valid UserTo userTo, BindingResult result) {
+         if (result.hasErrors()) {
+-            String errorFieldsMsg = result.getFieldErrors().stream()
+-                    .map(fe -> String.format("[%s] %s", fe.getField(), fe.getDefaultMessage()))
+-                    .collect(Collectors.joining("<br>"));
+-            return ResponseEntity.unprocessableEntity().body(errorFieldsMsg);
++            return ValidationUtil.getErrorResponse(result);
+         }
+         if (userTo.isNew()) {
+             super.create(userTo);
+Index: src/main/webapp/WEB-INF/jsp/meals.jsp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/WEB-INF/jsp/meals.jsp	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/webapp/WEB-INF/jsp/meals.jsp	(date 1597266855778)
+@@ -62,21 +62,6 @@
+                 <th></th>
+             </tr>
+             </thead>
+-            <c:forEach items="${meals}" var="meal">
+-                <jsp:useBean id="meal" type="ru.javawebinar.topjava.to.MealTo"/>
+-                <tr data-mealExcess="${meal.excess}">
+-                    <td>
+-                            <%--${meal.dateTime.toLocalDate()} ${meal.dateTime.toLocalTime()}--%>
+-                            <%--<%=TimeUtil.toString(meal.getDateTime())%>--%>
+-                            <%--${fn:replace(meal.dateTime, 'T', ' ')}--%>
+-                            ${fn:formatDateTime(meal.dateTime)}
+-                    </td>
+-                    <td>${meal.description}</td>
+-                    <td>${meal.calories}</td>
+-                    <td><a><span class="fa fa-pencil"></span></a></td>
+-                    <td><a onclick="deleteRow(${meal.id})"><span class="fa fa-remove"></span></a></td>
+-                </tr>
+-            </c:forEach>
+         </table>
+     </div>
+ </div>
+@@ -85,7 +70,7 @@
+     <div class="modal-dialog">
+         <div class="modal-content">
+             <div class="modal-header">
+-                <h4 class="modal-title" id="modalTitle"><spring:message code="meal.add"/></h4>
++                <h4 class="modal-title" id="modalTitle"></h4>
+                 <button type="button" class="close" data-dismiss="modal" onclick="closeNoty()">&times;</button>
+             </div>
+             <div class="modal-body">
+@@ -126,4 +111,7 @@
+ </div>
+ <jsp:include page="fragments/footer.jsp"/>
+ </body>
++<jsp:include page="fragments/i18n.jsp">
++    <jsp:param name="page" value="meal"/>
++</jsp:include>
+ </html>
+\ No newline at end of file
+Index: src/main/webapp/WEB-INF/jsp/fragments/i18n.jsp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/WEB-INF/jsp/fragments/i18n.jsp	(date 1597261801673)
++++ src/main/webapp/WEB-INF/jsp/fragments/i18n.jsp	(date 1597261801673)
+@@ -0,0 +1,14 @@
++<%@ page contentType="text/html" pageEncoding="UTF-8" %>
++<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
++<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
++
++<script type="text/javascript">
++    var i18n = [];
++    <%-- user.add/user.edit or meal.add/meal.edit --%>
++    i18n["addTitle"] = '<spring:message code="${param.page}.add"/>';
++    i18n["editTitle"] = '<spring:message code="${param.page}.edit"/>';
++
++    <c:forEach var='key' items='<%=new String[]{"common.deleted", "common.saved", "common.enabled", "common.disabled", "common.errorStatus", "common.confirm"}%>'>
++    i18n['${key}'] = '<spring:message code="${key}"/>';
++    </c:forEach>
++</script>
+\ No newline at end of file
+Index: src/main/java/ru/javawebinar/topjava/web/RootController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/web/RootController.java	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/java/ru/javawebinar/topjava/web/RootController.java	(date 1597261801532)
+@@ -1,18 +1,11 @@
+ package ru.javawebinar.topjava.web;
+ 
+-import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.stereotype.Controller;
+-import org.springframework.ui.Model;
+ import org.springframework.web.bind.annotation.GetMapping;
+-import ru.javawebinar.topjava.service.MealService;
+-import ru.javawebinar.topjava.util.MealsUtil;
+ 
+ @Controller
+ public class RootController {
+ 
+-    @Autowired
+-    private MealService mealService;
+-
+     @GetMapping("/")
+     public String root() {
+         return "redirect:meals";
+@@ -29,9 +22,7 @@
+     }
+ 
+     @GetMapping("/meals")
+-    public String getMeals(Model model) {
+-        model.addAttribute("meals",
+-                MealsUtil.getTos(mealService.getAll(SecurityUtil.authUserId()), SecurityUtil.authUserCaloriesPerDay()));
++    public String getMeals() {
+         return "meals";
+     }
+ }
+Index: src/main/webapp/resources/js/topjava.common.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.common.js	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/webapp/resources/js/topjava.common.js	(date 1597266855778)
+@@ -1,7 +1,20 @@
+-var context, form;
++var ajaxUrl, datatableApi, updateTable, form;
+ 
+-function makeEditable(ctx) {
+-    context = ctx;
++function makeEditable(aUrl, datatableOpts, upTable) {
++    ajaxUrl = aUrl;
++    datatableApi = $("#datatable").DataTable(
++        // https://api.jquery.com/jquery.extend/#jQuery-extend-deep-target-object1-objectN
++        $.extend(true, datatableOpts,
++            {
++                "ajax": {
++                    "url": ajaxUrl,
++                    "dataSrc": ""
++                },
++                "paging": false,
++                "info": true
++            }
++        ));
++    updateTable = upTable;
+     form = $('#detailsForm');
+     $(document).ajaxError(function (event, jqXHR, options, jsExc) {
+         failNoty(jqXHR);
+@@ -19,7 +32,7 @@
+ 
+ function updateRow(id) {
+     $("#modalTitle").html(i18n["editTitle"]);
+-    $.get(context.ajaxUrl + id, function (data) {
++    $.get(ajaxUrl + id, function (data) {
+         $.each(data, function (key, value) {
+             form.find("input[name='" + key + "']").val(value);
+         });
+@@ -30,27 +43,27 @@
+ function deleteRow(id) {
+     if (confirm(i18n['common.confirm'])) {
+         $.ajax({
+-            url: context.ajaxUrl + id,
++            url: ajaxUrl + id,
+             type: "DELETE"
+         }).done(function () {
+-            context.updateTable();
++            updateTable();
+             successNoty("common.deleted");
+         });
+     }
+ }
+ 
+ function updateTableByData(data) {
+-    context.datatableApi.clear().rows.add(data).draw();
++    datatableApi.clear().rows.add(data).draw();
+ }
+ 
+ function save() {
+     $.ajax({
+         type: "POST",
+-        url: context.ajaxUrl,
++        url: ajaxUrl,
+         data: form.serialize()
+     }).done(function () {
+         $("#editRow").modal("hide");
+-        context.updateTable();
++        updateTable();
+         successNoty("common.saved");
+     });
+ }
+Index: src/main/java/ru/javawebinar/topjava/model/Meal.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/ru/javawebinar/topjava/model/Meal.java	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/java/ru/javawebinar/topjava/model/Meal.java	(date 1597266980441)
+@@ -4,6 +4,7 @@
+ import org.hibernate.annotations.OnDelete;
+ import org.hibernate.annotations.OnDeleteAction;
+ import org.hibernate.validator.constraints.Range;
++import org.springframework.format.annotation.DateTimeFormat;
+ 
+ import javax.persistence.*;
+ import javax.validation.constraints.NotBlank;
+@@ -30,6 +31,7 @@
+ 
+     @Column(name = "date_time", nullable = false)
+     @NotNull
++    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+     private LocalDateTime dateTime;
+ 
+     @Column(name = "description", nullable = false)
+@@ -38,8 +40,9 @@
+     private String description;
+ 
+     @Column(name = "calories", nullable = false)
++    @NotNull
+     @Range(min = 10, max = 5000)
+-    private int calories;
++    private Integer calories;
+ 
+     @ManyToOne(fetch = FetchType.LAZY)
+     @JoinColumn(name = "user_id", nullable = false)
+@@ -70,7 +73,7 @@
+         return description;
+     }
+ 
+-    public int getCalories() {
++    public Integer getCalories() {
+         return calories;
+     }
+ 
+@@ -90,7 +93,7 @@
+         this.description = description;
+     }
+ 
+-    public void setCalories(int calories) {
++    public void setCalories(Integer calories) {
+         this.calories = calories;
+     }
+ 
+Index: src/main/webapp/resources/js/topjava.meals.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.meals.js	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/webapp/resources/js/topjava.meals.js	(date 1597266855778)
+@@ -1,48 +1,55 @@
++var mealAjaxUrl = "profile/meals/";
++
+ function updateFilteredTable() {
+     $.ajax({
+         type: "GET",
+-        url: "profile/meals/filter",
++        url: mealAjaxUrl + "filter",
+         data: $("#filter").serialize()
+     }).done(updateTableByData);
+ }
+ 
+ function clearFilter() {
+     $("#filter")[0].reset();
+-    $.get("profile/meals/", updateTableByData);
++    $.get(mealAjaxUrl, updateTableByData);
+ }
+ 
+ $(function () {
+-    makeEditable({
+-        ajaxUrl: "profile/meals/",
+-        datatableApi: $("#datatable").DataTable({
+-            "paging": false,
+-            "info": true,
+-            "columns": [
+-                {
+-                    "data": "dateTime"
+-                },
+-                {
+-                    "data": "description"
+-                },
+-                {
+-                    "data": "calories"
+-                },
+-                {
+-                    "defaultContent": "Edit",
+-                    "orderable": false
+-                },
+-                {
+-                    "defaultContent": "Delete",
+-                    "orderable": false
+-                }
+-            ],
+-            "order": [
+-                [
+-                    0,
+-                    "desc"
+-                ]
++    makeEditable(mealAjaxUrl, {
++        "columns": [
++            {
++                "data": "dateTime",
++                "render": function (date, type, row) {
++                    if (type === 'display') {
++                        return date.replace('T', ' ').substr(0, 16);
++                    }
++                    return date;
++                }
++            },
++            {
++                "data": "description"
++            },
++            {
++                "data": "calories"
++            },
++            {
++                "render": renderEditBtn,
++                "defaultContent": "",
++                "orderable": false
++            },
++            {
++                "render": renderDeleteBtn,
++                "defaultContent": "",
++                "orderable": false
++            }
++        ],
++        "order": [
++            [
++                0,
++                "desc"
+             ]
+-        }),
+-        updateTable: updateFilteredTable
+-    });
++        ],
++        "createdRow": function (row, data, dataIndex) {
++            $(row).attr("data-mealExcess", data.excess);
++        },
++    }, updateFilteredTable);
+ });
+\ No newline at end of file
+Index: src/main/webapp/resources/js/topjava.users.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/webapp/resources/js/topjava.users.js	(revision 367f7f6358715ab4b886c11a5c402a39373e81cc)
++++ src/main/webapp/resources/js/topjava.users.js	(date 1597262585073)
+@@ -17,75 +17,64 @@
+ 
+ // $(document).ready(function () {
+ $(function () {
+-    makeEditable({
+-            ajaxUrl: userAjaxUrl,
+-            datatableApi: $("#datatable").DataTable({
+-                "ajax": {
+-                    "url": userAjaxUrl,
+-                    "dataSrc": ""
+-                },
+-                "paging": false,
+-                "info": true,
+-                "columns": [
+-                    {
+-                        "data": "name"
+-                    },
+-                    {
+-                        "data": "email",
+-                        "render": function (data, type, row) {
+-                            if (type === "display") {
+-                                return "<a href='mailto:" + data + "'>" + data + "</a>";
+-                            }
+-                            return data;
+-                        }
+-                    },
+-                    {
+-                        "data": "roles"
+-                    },
+-                    {
+-                        "data": "enabled",
+-                        "render": function (data, type, row) {
+-                            if (type === "display") {
+-                                return "<input type='checkbox' " + (data ? "checked" : "") + " onclick='enable($(this)," + row.id + ");'/>";
+-                            }
+-                            return data;
+-                        }
+-                    },
+-                    {
+-                        "data": "registered",
+-                        "render": function (date, type, row) {
+-                            if (type === "display") {
+-                                return date.substring(0, 10);
+-                            }
+-                            return date;
+-                        }
+-                    },
+-                    {
+-                        "orderable": false,
+-                        "defaultContent": "",
+-                        "render": renderEditBtn
+-                    },
+-                    {
+-                        "orderable": false,
+-                        "defaultContent": "",
+-                        "render": renderDeleteBtn
+-                    }
+-                ],
+-                "order": [
+-                    [
+-                        0,
+-                        "asc"
+-                    ]
+-                ],
+-                "createdRow": function (row, data, dataIndex) {
+-                    if (!data.enabled) {
+-                        $(row).attr("data-userEnabled", false);
+-                    }
+-                }
+-            }),
+-            updateTable: function () {
+-                $.get(userAjaxUrl, updateTableByData);
+-            }
+-        }
+-    );
++    makeEditable(userAjaxUrl, {
++        "columns": [
++            {
++                "data": "name"
++            },
++            {
++                "data": "email",
++                "render": function (data, type, row) {
++                    if (type === "display") {
++                        return "<a href='mailto:" + data + "'>" + data + "</a>";
++                    }
++                    return data;
++                }
++            },
++            {
++                "data": "roles"
++            },
++            {
++                "data": "enabled",
++                "render": function (data, type, row) {
++                    if (type === "display") {
++                        return "<input type='checkbox' " + (data ? "checked" : "") + " onclick='enable($(this)," + row.id + ");'/>";
++                    }
++                    return data;
++                }
++            },
++            {
++                "data": "registered",
++                "render": function (date, type, row) {
++                    if (type === "display") {
++                        return date.substring(0, 10);
++                    }
++                    return date;
++                }
++            },
++            {
++                "orderable": false,
++                "defaultContent": "",
++                "render": renderEditBtn
++            },
++            {
++                "orderable": false,
++                "defaultContent": "",
++                "render": renderDeleteBtn
++            }
++        ],
++        "order": [
++            [
++                0,
++                "asc"
++            ]
++        ],
++        "createdRow": function (row, data, dataIndex) {
++            if (!data.enabled) {
++                $(row).attr("data-userEnabled", false);
++            }
++        }
++    }, function () {
++        $.get(userAjaxUrl, updateTableByData);
++    });
+ });
+\ No newline at end of file
