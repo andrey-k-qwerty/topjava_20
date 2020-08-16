@@ -1,0 +1,23 @@
+Index: src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(revision 9d81cc606a3fb157282df64cc23253b8bfdb7fd8)
++++ src/test/java/ru/javawebinar/topjava/web/user/AdminRestControllerTest.java	(date 1596970906180)
+@@ -121,11 +121,11 @@
+     @Test
+     void getWithMeals() throws Exception {
+         assumeDataJpa();
+-        perform(MockMvcRequestBuilders.get(REST_URL + USER_ID + "/with-meals")
+-                .with(userHttpBasic(USER)))
++        perform(MockMvcRequestBuilders.get(REST_URL + ADMIN_ID + "/with-meals")
++                .with(userHttpBasic(ADMIN)))
+                 .andExpect(status().isOk())
+                 .andDo(print())
+                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+-                .andExpect(USER_WITH_MEALS_MATCHER.contentJson(USER));
++                .andExpect(USER_WITH_MEALS_MATCHER.contentJson(ADMIN));
+     }
+ }
+\ No newline at end of file
